@@ -35,6 +35,18 @@ describe Geolocal::Provider::DB_IP do
         to_return(:status => 200, :body => country_csv, :headers => {'Content-Length' => country_csv.length})
     end
 
+    it 'handles invalid launch page url' do
+      expect{provider.get_launch_page_body(nil)}.to raise_error(/^unable to access/)
+    end
+
+    it 'handles not being able to access download pre-page' do
+      stub_request(:get, 'https://db-ip.com/db/download/country').
+        with(headers: {'Accept'=>'*/*', 'User-Agent'=>'Ruby'}).
+        to_return(status: 404, body: "blah", headers: {})
+
+      expect{provider.download}.to raise_error(/^unable to access/)
+    end
+
     it 'can download the csv' do
       Geolocal.configure do |config|
         config.tmpdir = 'tmp/geolocal-test'

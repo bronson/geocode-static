@@ -33,11 +33,26 @@ class Geolocal::Provider::DB_IP < Geolocal::Provider::Base
     "#{config[:tmpdir]}/dbip-country.csv.gz"
   end
 
+  def get_launch_page_body(start_url)
+    begin
+      uri = URI start_url
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE # Sets the HTTPS verify mode
+      response = http.get(uri.request_uri)
+      raise unless response.code.match(/^2/)
+      response.body
+        
+    rescue
+      raise "unable to access resource: #{START_URL}"
+    end
+  end
+
   def download_files
     # they update the file every month but no idea which day they upload it
     return if up_to_date?(csv_file, 86400)
 
-    page = Net::HTTP.get(URI START_URL)
+    page = get_launch_page_body(START_URL)
 
     # if we used Nokogiri: (we don't since we don't want to force the dependency)
     # doc = Nokogiri::HTML(page)
